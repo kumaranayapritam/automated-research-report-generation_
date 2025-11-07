@@ -1,6 +1,8 @@
 pipeline {
-    agent any
-    
+    agent {
+        label 'docker'  // Ensures we run on an agent with Docker support
+    }
+   
     environment {
         // Azure credentials from Jenkins
         AZURE_CLIENT_ID = credentials('azure-client-id')
@@ -38,6 +40,7 @@ pipeline {
         // Clean workspace first
         // Clone the repository
         cleanWs()
+        checkout scm
         git branch: 'main',
             url: 'https://github.com/kumaranayapritam/automated-research-report-generation_.git'
     }
