@@ -37,6 +37,7 @@ pipeline {
         echo 'Checking out code from Git...'
         // Clean workspace first
         // Clone the repository
+        cleanWs()
         git branch: 'main',
             url: 'https://github.com/kumaranayapritam/automated-research-report-generation_.git'
     }
