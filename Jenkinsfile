@@ -26,7 +26,7 @@ pipeline {
         // App configuration
         APP_RESOURCE_GROUP = 'research-report-app-rg'
         APP_NAME = 'research-report-app'
-        ACR_NAME = 'researchreportacr'
+        ACR_NAME = 'researchreportacrkpr'
         IMAGE_NAME = 'research-report-app'
         CONTAINER_ENV = 'research-report-env'
     }
@@ -39,7 +39,7 @@ pipeline {
         deleteDir()
         // Clone the repository
         git branch: 'main',
-            url: 'https://github.com/sunnysavita10/automated-research-report-generation.git'
+            url: 'https://github.com/kumaranayapritam/automated-research-report-generation_.git'
     }
 }
         
@@ -180,7 +180,6 @@ pipeline {
                             --name $APP_NAME \
                             --resource-group $APP_RESOURCE_GROUP \
                             --secrets \
-                              openai-api-key=$OPENAI_API_KEY \
                               google-api-key=$GOOGLE_API_KEY \
                               groq-api-key=$GROQ_API_KEY \
                               tavily-api-key=$TAVILY_API_KEY
@@ -191,7 +190,6 @@ pipeline {
                             --name $APP_NAME \
                             --resource-group $APP_RESOURCE_GROUP \
                             --set-env-vars \
-                              OPENAI_API_KEY=secretref:openai-api-key \
                               GOOGLE_API_KEY=secretref:google-api-key \
                               GROQ_API_KEY=secretref:groq-api-key \
                               TAVILY_API_KEY=secretref:tavily-api-key \
@@ -205,7 +203,6 @@ pipeline {
                             --name $APP_NAME \
                             --resource-group $APP_RESOURCE_GROUP \
                             --secrets \
-                              openai-api-key=$OPENAI_API_KEY \
                               google-api-key=$GOOGLE_API_KEY \
                               groq-api-key=$GROQ_API_KEY \
                               tavily-api-key=$TAVILY_API_KEY
