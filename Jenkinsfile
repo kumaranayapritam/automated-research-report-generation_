@@ -162,7 +162,6 @@ pipeline {
                           --name $APP_NAME \
                           --resource-group $APP_RESOURCE_GROUP \
                           --secrets \
-                            openai-api-key=$OPENAI_API_KEY \
                             google-api-key=$GOOGLE_API_KEY \
                             groq-api-key=$GROQ_API_KEY \
                             tavily-api-key=$TAVILY_API_KEY
@@ -171,7 +170,6 @@ pipeline {
                           --name $APP_NAME \
                           --resource-group $APP_RESOURCE_GROUP \
                           --set-env-vars \
-                            OPENAI_API_KEY=secretref:openai-api-key \
                             GOOGLE_API_KEY=secretref:google-api-key \
                             GROQ_API_KEY=secretref:groq-api-key \
                             TAVILY_API_KEY=secretref:tavily-api-key \
