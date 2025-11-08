@@ -8,10 +8,10 @@ set -e
 # Configuration
 RESOURCE_GROUP="research-report-jenkins-rg"
 LOCATION="eastus"
-STORAGE_ACCOUNT="reportjenkinsstorekpr"
+STORAGE_ACCOUNT="reportjenkinsstore"
 FILE_SHARE="jenkins-data"
-ACR_NAME="reportjenkinsacrkpr"
--report"
+ACR_NAME="reportjenkinsacr"
+CONTAINER_NAME="jenkins-research-report"
 DNS_NAME_LABEL="jenkins-research-$(date +%s | tail -c 6)"
 JENKINS_IMAGE_NAME="custom-jenkins"
 JENKINS_IMAGE_TAG="lts-git-configured"
@@ -25,29 +25,29 @@ echo "╚═══════════════════════�
 echo ""
 
 # Verify Azure login
-echo "🔐 Verifying Azure login..."
+echo "Verifying Azure login..."
 if ! az account show &>/dev/null; then
-    echo "❌ Not logged in to Azure. Please run 'az login' first."
+    echo "Not logged in to Azure. Please run 'az login' first."
     exit 1
 fi
 
 # Set subscription if provided
 if [ -n "$SUBSCRIPTION_ID" ]; then
-    echo "📋 Setting Azure subscription to: $SUBSCRIPTION_ID"
+    echo "Setting Azure subscription to: $SUBSCRIPTION_ID"
     az account set --subscription "$SUBSCRIPTION_ID"
     if [ $? -ne 0 ]; then
-        echo "❌ Failed to set subscription. Please verify the subscription ID."
+        echo "Failed to set subscription. Please verify the subscription ID."
         exit 1
     fi
 else
-    echo "ℹ️  No subscription ID provided. Using current default subscription."
+    echo "ℹ️No subscription ID provided. Using current default subscription."
     CURRENT_SUB=$(az account show --query id -o tsv)
     echo "   Current subscription: $CURRENT_SUB"
 fi
 
 # Verify subscription is set correctly
 CURRENT_SUB=$(az account show --query id -o tsv)
-echo "✅ Using subscription: $CURRENT_SUB"
+echo "Using subscription: $CURRENT_SUB"
 echo ""
 
 # Store subscription ID for use in commands
@@ -56,11 +56,11 @@ if [ -z "$SUBSCRIPTION_ID" ]; then
 fi
 
 # Create Resource Group
-echo "📦 Creating Resource Group: $RESOURCE_GROUP..."
+echo "Creating Resource Group: $RESOURCE_GROUP..."
 az group create --name $RESOURCE_GROUP --location $LOCATION --subscription "$SUBSCRIPTION_ID"
 
 # Create Storage Account
-echo "💾 Creating Storage Account: $STORAGE_ACCOUNT..."
+echo "Creating Storage Account: $STORAGE_ACCOUNT..."
 az storage account create \
   --resource-group $RESOURCE_GROUP \
   --name $STORAGE_ACCOUNT \
@@ -76,7 +76,7 @@ STORAGE_KEY=$(az storage account keys list \
   --query '[0].value' -o tsv)
 
 # Create File Share
-echo "📁 Creating File Share: $FILE_SHARE..."
+echo "Creating File Share: $FILE_SHARE..."
 az storage share create \
   --name $FILE_SHARE \
   --account-name $STORAGE_ACCOUNT \
@@ -84,7 +84,7 @@ az storage share create \
   --subscription "$SUBSCRIPTION_ID"
 
 # Create Azure Container Registry
-echo "🐳 Creating Container Registry: $ACR_NAME..."
+echo "Creating Container Registry: $ACR_NAME..."
 az acr create \
   --resource-group $RESOURCE_GROUP \
   --name $ACR_NAME \
@@ -93,29 +93,29 @@ az acr create \
   --subscription "$SUBSCRIPTION_ID"
 
 # Login to ACR
-echo "🔐 Logging in to Azure Container Registry..."
+echo "Logging in to Azure Container Registry..."
 az acr login --name $ACR_NAME
 
 # Build custom Jenkins image with Git and safe.directory configuration
-echo "🔨 Building custom Jenkins Docker image for Linux AMD64..."
+echo "Building custom Jenkins Docker image for Linux AMD64..."
 docker build --platform linux/amd64 -f Dockerfile.jenkins -t ${ACR_NAME}.azurecr.io/${JENKINS_IMAGE_NAME}:${JENKINS_IMAGE_TAG} .
 
 # Push Jenkins image to ACR with retry logic
-echo "📤 Pushing Jenkins image to ACR..."
+echo "Pushing Jenkins image to ACR..."
 MAX_RETRIES=3
 RETRY_COUNT=0
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
   if docker push ${ACR_NAME}.azurecr.io/${JENKINS_IMAGE_NAME}:${JENKINS_IMAGE_TAG}; then
-    echo "✅ Image pushed successfully!"
+    echo "Image pushed successfully!"
     break
   else
     RETRY_COUNT=$((RETRY_COUNT + 1))
     if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-      echo "⚠️  Push failed. Retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+      echo "Push failed. Retrying ($RETRY_COUNT/$MAX_RETRIES)..."
       sleep 5
     else
-      echo "❌ Failed to push image after $MAX_RETRIES attempts."
+      echo "Failed to push image after $MAX_RETRIES attempts."
       echo ""
       echo "This can happen due to network issues or large image size."
       echo ""
@@ -131,7 +131,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
 done
 
 # Get ACR credentials for container deployment
-echo "🔑 Retrieving ACR credentials..."
+echo "Retrieving ACR credentials..."
 ACR_USERNAME=$(az acr credential show \
   --name $ACR_NAME \
   --subscription "$SUBSCRIPTION_ID" \
@@ -143,7 +143,7 @@ ACR_PASSWORD=$(az acr credential show \
   --query passwords[0].value -o tsv)
 
 # Deploy Jenkins Container using custom image
-echo "🚀 Deploying Jenkins Container..."
+echo "Deploying Jenkins Container..."
 az container create \
   --resource-group $RESOURCE_GROUP \
   --name $CONTAINER_NAME \
@@ -164,7 +164,7 @@ az container create \
   --subscription "$SUBSCRIPTION_ID"
 
 # Wait for deployment
-echo "⏳ Waiting for Jenkins to deploy..."
+echo "Waiting for Jenkins to deploy..."
 sleep 10
 
 # Get Jenkins URL
@@ -179,9 +179,9 @@ echo "╔═══════════════════════�
 echo "║           Deployment Complete!                         ║"
 echo "╚════════════════════════════════════════════════════════╝"
 echo ""
-echo "🌐 Jenkins URL: http://$JENKINS_URL:8080"
+echo "Jenkins URL: http://$JENKINS_URL:8080"
 echo ""
-echo "⏳ Wait 2-3 minutes for Jenkins to fully start, then run:"
+echo "Wait 2-3 minutes for Jenkins to fully start, then run:"
 echo ""
 echo "az container exec \\"
 echo "  --resource-group $RESOURCE_GROUP \\"
